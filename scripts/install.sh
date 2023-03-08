@@ -6,7 +6,7 @@ SYSTEMDDIR="/etc/systemd/system"
 MOONRAKER_BOT_SERVICE="moonraker-telegram-bot.service"
 MOONRAKER_BOT_ENV="${HOME}/moonraker-telegram-bot-env"
 MOONRAKER_BOT_DIR="${HOME}/moonraker-telegram-bot"
-MOONRAKER_BOT_LOG="${HOME}/printer_data/logs/telegram.log"
+MOONRAKER_BOT_LOG="/var/log/telegram-streamer-bot/bot_log.log/"
 MOONRAKER_BOT_CONF="${HOME}/printer_data/config"
 KLIPPER_CONF_DIR="${HOME}/printer_data/config"
 KLIPPER_LOGS_DIR="${HOME}/printer_data/logs"
@@ -175,7 +175,7 @@ WantedBy=multi-user.target
 [Service]
 Type=simple
 User=${CURRENT_USER}
-ExecStart=${MOONRAKER_BOT_ENV}/bin/python ${MOONRAKER_BOT_DIR}/bot/main.py -c ${MOONRAKER_BOT_CONF}/telegram.conf -l ${MOONRAKER_BOT_LOG}
+ExecStart=${MOONRAKER_BOT_ENV}/bin/python ${MOONRAKER_BOT_DIR}/bot/main.py  -l ${MOONRAKER_BOT_LOG}
 Restart=always
 RestartSec=5
 EOF
