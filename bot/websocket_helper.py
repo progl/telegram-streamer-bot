@@ -10,7 +10,6 @@ import websocket  # type: ignore
 from configuration import ConfigWrapper
 from klippy import Klippy
 from notifications import Notifier
-from power_device import PowerDevice
 from timelapse import Timelapse
 
 logger = logging.getLogger(__name__)
@@ -36,8 +35,7 @@ class WebSocketHelper:
         notifier: Notifier,
         timelapse: Timelapse,
         scheduler: BackgroundScheduler,
-        light_power_device: PowerDevice,
-        psu_power_device: PowerDevice,
+
         logging_handler: logging.Handler,
     ):
         self._host: str = config.bot_config.host
@@ -45,8 +43,7 @@ class WebSocketHelper:
         self._notifier: Notifier = notifier
         self._timelapse: Timelapse = timelapse
         self._scheduler: BackgroundScheduler = scheduler
-        self._light_power_device: PowerDevice = light_power_device
-        self._psu_power_device: PowerDevice = psu_power_device
+
         self._log_parser: bool = config.bot_config.log_parser
 
         if config.bot_config.debug:
@@ -54,13 +51,13 @@ class WebSocketHelper:
         if logging_handler:
             logger.addHandler(logging_handler)
 
-        self.websocket = websocket.WebSocketApp(
-            f"ws://{self._host}/websocket{self._klippy.one_shot_token}",
-            on_message=self.websocket_to_message,
-            on_open=self.on_open,
-            on_error=self.on_error,
-            on_close=self.on_close,
-        )
+        # self.websocket = websocket.WebSocketApp(
+        #     f"ws://{self._host}/websocket{self._klippy.one_shot_token}",
+        #     on_message=self.websocket_to_message,
+        #     on_open=self.on_open,
+        #     on_error=self.on_error,
+        #     on_close=self.on_close,
+        # )
 
     @staticmethod
     def on_close(_, close_status_code, close_msg):
@@ -102,6 +99,7 @@ class WebSocketHelper:
         )
 
     def on_open(self, websock):
+        return
         websock.send(ujson.dumps({"jsonrpc": "2.0", "method": "printer.info", "id": self._my_id}))
         websock.send(ujson.dumps({"jsonrpc": "2.0", "method": "machine.device_power.devices", "id": self._my_id}))
 
@@ -301,10 +299,6 @@ class WebSocketHelper:
         device_name = device["device"]
         device_state = bool(device["status"] == "on")
         self._klippy.update_power_device(device_name, device)
-        if self._psu_power_device and self._psu_power_device.name == device_name:
-            self._psu_power_device.device_state = device_state
-        if self._light_power_device and self._light_power_device.name == device_name:
-            self._light_power_device.device_state = device_state
 
     def websocket_to_message(self, ws_loc, ws_message):
         logger.debug(ws_message)
@@ -442,5 +436,7 @@ class WebSocketHelper:
             self.parselog()
 
         self._scheduler.add_job(self.reshedule, "interval", seconds=2, id="ws_reschedule", replace_existing=True)
+        while True:
+            time.sleep(1)
 
-        self.websocket.run_forever(skip_utf8_validation=True)
+        # self.websocket.run_forever(skip_utf8_validation=True)

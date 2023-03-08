@@ -18,7 +18,7 @@ from telegram import Message
 
 from configuration import ConfigWrapper
 from klippy import Klippy
-from power_device import PowerDevice
+
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class Camera:
         self,
         config: ConfigWrapper,
         klippy: Klippy,
-        light_device: PowerDevice,
+
         logging_handler: logging.Handler,
     ):
         self.enabled: bool = bool(config.camera.enabled and config.camera.host)
@@ -93,7 +93,6 @@ class Camera:
         self._light_need_off_lock: threading.Lock = threading.Lock()
 
         self.light_timeout: int = config.camera.light_timeout
-        self.light_device: PowerDevice = light_device
         self._camera_lock: threading.Lock = threading.Lock()
         self.light_lock = threading.Lock()
         self.light_timer_event: threading.Event = threading.Event()

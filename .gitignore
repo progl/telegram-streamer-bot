@@ -7,3 +7,4 @@ telegram.log
 telegram_dev.conf
 secrets_dev.conf
 .mypy_cache
+!/bot/telegram.conf

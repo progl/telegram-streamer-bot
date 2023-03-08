@@ -13,7 +13,6 @@ import requests
 import ujson
 
 from configuration import ConfigWrapper
-from power_device import PowerDevice
 
 requests.models.complexjson = ujson  # type: ignore
 
@@ -30,8 +29,6 @@ class Klippy:
     def __init__(
         self,
         config: ConfigWrapper,
-        light_device: PowerDevice,
-        psu_device: PowerDevice,
         logging_handler: logging.Handler,
     ):
         self._host: str = f"{config.bot_config.protocol}{config.bot_config.host}"
@@ -39,8 +36,6 @@ class Klippy:
         self._show_private_macros: bool = config.telegram_ui.show_private_macros
         self._message_parts: List[str] = config.status_message_content.content
         self._eta_source: str = config.telegram_ui.eta_source
-        self._light_device: PowerDevice = light_device
-        self._psu_device: PowerDevice = psu_device
         self._sensors_list: List[str] = config.status_message_content.sensors
         self._heaters_list: List[str] = config.status_message_content.heaters
         self._fans_list: List[str] = config.status_message_content.fans
@@ -52,7 +47,7 @@ class Klippy:
 
         self._dbname: str = "telegram-bot"
 
-        self._connected: bool = False
+        self._connected: bool = True
         self.printing: bool = False
         self.paused: bool = False
         self.state: str = ""
@@ -220,8 +215,9 @@ class Klippy:
         return [key for key in self._get_full_marco_list() if key not in self._hidden_macros and (True if self._show_private_macros else not key.startswith("_"))]
 
     def _auth_moonraker(self) -> None:
-        if not self._user or not self._passwd:
-            return
+        return
+        # if not self._user or not self._passwd:
+            # print('_auth_moonraker  not self._user or not self._passwd')
         # TOdo: add try catch
         res = requests.post(f"{self._host}/access/login", json={"username": self._user, "password": self._passwd}, timeout=15)
         if res.ok:
@@ -253,8 +249,9 @@ class Klippy:
 
     def check_connection(self) -> str:
         try:
-            response = self._make_request("GET", "/printer/info", timeout=3)
-            return "" if response.ok else f"Connection failed. {response.reason}"
+            # response = self._make_request("GET", "/printer/info", timeout=3)
+            # return "" if response.ok else f"Connection failed. {response.reason}"
+            return ""
         except Exception as ex:
             logger.error(ex, exc_info=True)
             return "Connection failed."
@@ -478,9 +475,10 @@ class Klippy:
         return version_message
 
     def add_bot_announcements_feed(self):
-        res = self._make_request("POST", "/server/announcements/feed?name=moonraker-telegram-bot")
-        if not res.ok:
-            logger.warning("Failed adding announcements bot feed.\n\n%s", res.reason)
+        # res = self._make_request("POST", "/server/announcements/feed?name=moonraker-telegram-bot")
+        # if not res.ok:
+        #     logger.warning("Failed adding announcements bot feed.\n\n%s", res.reason)
+        return
 
     # moonraker databse section
     def get_param_from_db(self, param_name: str):

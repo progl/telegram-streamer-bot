@@ -44,7 +44,6 @@ from camera import Camera
 from configuration import ConfigWrapper
 from klippy import Klippy
 from notifications import Notifier
-from power_device import PowerDevice
 from timelapse import Timelapse
 
 logging.basicConfig(
@@ -108,8 +107,6 @@ cameraWrap: Camera
 timelapse: Timelapse
 notifier: Notifier
 klippy: Klippy
-light_power_device: PowerDevice
-psu_power_device: PowerDevice
 ws_helper: WebSocketHelper
 
 
@@ -149,13 +146,13 @@ def status(update: Update, _: CallbackContext) -> None:
         time.sleep(configWrap.camera.light_timeout + 1.5)
         update.effective_message.delete()
     else:
-        mess = escape(klippy.get_status())
+
         if cameraWrap.enabled:
             with cameraWrap.take_photo() as bio:
                 update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id, action=ChatAction.UPLOAD_PHOTO)
                 update.effective_message.reply_photo(
                     photo=bio,
-                    caption=mess,
+                    caption='cameraWrap',
                     parse_mode=PARSEMODE_HTML,
                     disable_notification=notifier.silent_commands,
                 )
@@ -163,7 +160,7 @@ def status(update: Update, _: CallbackContext) -> None:
         else:
             update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id, action=ChatAction.TYPING)
             update.effective_message.reply_text(
-                mess,
+                'No camera',
                 parse_mode=PARSEMODE_HTML,
                 disable_notification=notifier.silent_commands,
                 quote=True,
@@ -348,27 +345,6 @@ def power(update: Update, _: CallbackContext) -> None:
         return
 
     update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id, action=ChatAction.TYPING)
-    if psu_power_device:
-        if psu_power_device.device_state:
-            update.effective_message.reply_text(
-                "Power Off printer?",
-                reply_markup=confirm_keyboard("power_off_printer"),
-                disable_notification=notifier.silent_commands,
-                quote=True,
-            )
-        else:
-            update.effective_message.reply_text(
-                "Power On printer?",
-                reply_markup=confirm_keyboard("power_on_printer"),
-                disable_notification=notifier.silent_commands,
-                quote=True,
-            )
-    else:
-        update.effective_message.reply_text(
-            "No power device in config!",
-            disable_notification=notifier.silent_commands,
-            quote=True,
-        )
 
 
 def light_toggle(update: Update, _: CallbackContext) -> None:
@@ -376,20 +352,7 @@ def light_toggle(update: Update, _: CallbackContext) -> None:
         logger.warning("Undefined effective message")
         return
 
-    if light_power_device:
-        mess = f"Device `{light_power_device.name}` toggled " + ("on" if light_power_device.toggle_device() else "off")
-        update.effective_message.reply_text(
-            mess,
-            parse_mode=PARSEMODE_HTML,
-            disable_notification=notifier.silent_commands,
-            quote=True,
-        )
-    else:
-        update.effective_message.reply_text(
-            "No light device in config!",
-            disable_notification=notifier.silent_commands,
-            quote=True,
-        )
+
 
 
 def button_lapse_handler(update: Update, context: CallbackContext) -> None:
@@ -555,22 +518,7 @@ def button_handler(update: Update, context: CallbackContext) -> None:
         update.effective_message.reply_to_message.reply_text("Restarting bot", quote=True)
         query.delete_message()
         restart_bot()
-    elif query.data == "power_off_printer":
-        psu_power_device.switch_device(False)
-        update.effective_message.reply_to_message.reply_text(
-            f"Device `{psu_power_device.name}` toggled off",
-            parse_mode=PARSEMODE_HTML,
-            quote=True,
-        )
-        query.delete_message()
-    elif query.data == "power_on_printer":
-        psu_power_device.switch_device(True)
-        update.effective_message.reply_to_message.reply_text(
-            f"Device `{psu_power_device.name}` toggled on",
-            parse_mode=PARSEMODE_HTML,
-            quote=True,
-        )
-        query.delete_message()
+
     elif "macro:" in query.data:
         command = query.data.replace("macro:", "")
         update.effective_message.reply_to_message.reply_text(
@@ -899,10 +847,6 @@ def create_keyboard():
     custom_keyboard = []
     if cameraWrap.enabled:
         custom_keyboard.append("/video")
-    if psu_power_device:
-        custom_keyboard.append("/power")
-    if light_power_device:
-        custom_keyboard.append("/light")
 
     keyboard = configWrap.telegram_ui.buttons
     if len(custom_keyboard) > 0:
@@ -980,7 +924,7 @@ def greeting_message(bot: telegram.Bot) -> None:
     else:
         mess += "Printer online"
         if configWrap.configuration_errors:
-            mess += escape(klippy.get_versions_info(bot_only=True)) + configWrap.configuration_errors
+            mess +=   configWrap.configuration_errors
 
     reply_markup = ReplyKeyboardMarkup(create_keyboard(), resize_keyboard=True)
     bot.send_message(
@@ -1050,7 +994,7 @@ def start_bot(bot_token, socks):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Moonraker Telegram Bot")
+    parser = argparse.ArgumentParser(description="Streamer Telegram Bot")
     parser.add_argument(
         "-c",
         "--configfile",
@@ -1098,16 +1042,14 @@ if __name__ == "__main__":
         logging.getLogger("apscheduler").addHandler(rotatingHandler)
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
 
-    light_power_device = PowerDevice(configWrap.bot_config.light_device_name, configWrap.bot_config.host)
-    psu_power_device = PowerDevice(configWrap.bot_config.poweroff_device_name, configWrap.bot_config.host)
 
-    klippy = Klippy(configWrap, light_power_device, psu_power_device, rotatingHandler)
-    cameraWrap = Camera(configWrap, klippy, light_power_device, rotatingHandler)
+    klippy = Klippy(configWrap,  rotatingHandler)
+    cameraWrap = Camera(configWrap, klippy,  rotatingHandler)
     bot_updater = start_bot(configWrap.secrets.token, configWrap.bot_config.socks_proxy)
     timelapse = Timelapse(configWrap, klippy, cameraWrap, scheduler, bot_updater.bot, rotatingHandler)
     notifier = Notifier(configWrap, bot_updater.bot, klippy, cameraWrap, scheduler, rotatingHandler)
 
-    ws_helper = WebSocketHelper(configWrap, klippy, notifier, timelapse, scheduler, light_power_device, psu_power_device, rotatingHandler)
+    ws_helper = WebSocketHelper(configWrap, klippy, notifier, timelapse, scheduler,  rotatingHandler)
 
     scheduler.start()
 
