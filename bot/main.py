@@ -154,7 +154,7 @@ def status(update: Update, _: CallbackContext) -> None:
                     update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id, action=ChatAction.UPLOAD_PHOTO)
                     update.effective_message.reply_photo(
                         photo=bio,
-                        caption=f'name {cameraWrap.camera.name}',
+                        caption=f'name {cameraWrap.name}',
                         parse_mode=PARSEMODE_HTML,
                         disable_notification=notifier.silent_commands,
                     )

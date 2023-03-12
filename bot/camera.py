@@ -69,6 +69,7 @@ class Camera:
         camera
     ):
         self.camera =  camera
+        self.name = camera.name
         self.enabled: bool = bool(self.camera.enabled and self.camera.host)
         self._host = int(self.camera.host) if str.isdigit(self.camera.host) else self.camera.host
         self._threads: int = self.camera.threads
