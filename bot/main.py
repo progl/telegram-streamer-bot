@@ -1046,8 +1046,8 @@ if __name__ == "__main__":
 
 
     klippy = Klippy(configWrap,  rotatingHandler)
-    cameraWrap = Camera(configWrap, klippy,  rotatingHandler, configWrap.camera)
-    cameraWrap2 = Camera(configWrap, klippy,  rotatingHandler, configWrap.camera2)
+    cameraWrap = Camera(configWrap, klippy,  rotatingHandler, configWrap.camera, configWrap.camera.name)
+    cameraWrap2 = Camera(configWrap, klippy,  rotatingHandler, configWrap.camera2, configWrap.camera2.name)
     camera_wraps= [cameraWrap, cameraWrap2]
     bot_updater = start_bot(configWrap.secrets.token, configWrap.bot_config.socks_proxy)
     timelapse = Timelapse(configWrap, klippy, cameraWrap, scheduler, bot_updater.bot, rotatingHandler)
