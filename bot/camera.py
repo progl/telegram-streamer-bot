@@ -65,18 +65,19 @@ class Camera:
         self,
         config: ConfigWrapper,
         klippy: Klippy,
-
         logging_handler: logging.Handler,
+        camera
     ):
-        self.enabled: bool = bool(config.camera.enabled and config.camera.host)
-        self._host = int(config.camera.host) if str.isdigit(config.camera.host) else config.camera.host
-        self._threads: int = config.camera.threads
-        self._flip_vertically: bool = config.camera.flip_vertically
-        self._flip_horizontally: bool = config.camera.flip_horizontally
-        self._fourcc: str = config.camera.fourcc
-        self._video_duration: int = config.camera.video_duration
-        self._video_buffer_size: int = config.camera.video_buffer_size
-        self._stream_fps: int = config.camera.stream_fps
+        self.camera =  camera
+        self.enabled: bool = bool(self.camera.enabled and self.camera.host)
+        self._host = int(self.camera.host) if str.isdigit(self.camera.host) else self.camera.host
+        self._threads: int = self.camera.threads
+        self._flip_vertically: bool = self.camera.flip_vertically
+        self._flip_horizontally: bool = self.camera.flip_horizontally
+        self._fourcc: str = self.camera.fourcc
+        self._video_duration: int = self.camera.video_duration
+        self._video_buffer_size: int = self.camera.video_buffer_size
+        self._stream_fps: int = self.camera.stream_fps
         self._klippy: Klippy = klippy
 
         # Todo: refactor into timelapse class
@@ -92,7 +93,7 @@ class Camera:
         self._light_need_off: bool = False
         self._light_need_off_lock: threading.Lock = threading.Lock()
 
-        self.light_timeout: int = config.camera.light_timeout
+        self.light_timeout: int = self.camera.light_timeout
         self._camera_lock: threading.Lock = threading.Lock()
         self.light_lock = threading.Lock()
         self.light_timer_event: threading.Event = threading.Event()
@@ -101,12 +102,12 @@ class Camera:
         self._hw_accel: bool = False
 
         self._img_extension: str
-        if config.camera.picture_quality == "low":
+        if self.camera.picture_quality == "low":
             self._img_extension = "jpeg"
-        elif config.camera.picture_quality == "high":
+        elif self.camera.picture_quality == "high":
             self._img_extension = "webp"
         else:
-            self._img_extension = config.camera.picture_quality
+            self._img_extension = self.camera.picture_quality
 
         self._light_requests: int = 0
         self._light_request_lock: threading.Lock = threading.Lock()
@@ -119,11 +120,11 @@ class Camera:
             self._flip = 0
 
         self._rotate_code: int
-        if config.camera.rotate == "90_cw":
+        if self.camera.rotate == "90_cw":
             self._rotate_code = cv2.ROTATE_90_CLOCKWISE
-        elif config.camera.rotate == "90_ccw":
+        elif self.camera.rotate == "90_ccw":
             self._rotate_code = cv2.ROTATE_90_COUNTERCLOCKWISE
-        elif config.camera.rotate == "180":
+        elif self.camera.rotate == "180":
             self._rotate_code = cv2.ROTATE_180
         else:
             self._rotate_code = -10
@@ -140,7 +141,7 @@ class Camera:
             cv2.ocl.setUseOpenCL(True)
             logger.debug("OpenCL in OpenCV is enabled: %s", cv2.ocl.useOpenCL())
 
-        self._cv2_params: List = config.camera.cv2_params
+        self._cv2_params: List = self.camera.cv2_params
         cv2.setNumThreads(self._threads)
         self.cam_cam = cv2.VideoCapture()
         self._set_cv2_params()

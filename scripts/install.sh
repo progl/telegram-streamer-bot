@@ -175,7 +175,7 @@ WantedBy=multi-user.target
 [Service]
 Type=simple
 User=${CURRENT_USER}
-ExecStart=${MOONRAKER_BOT_ENV}/bin/python ${MOONRAKER_BOT_DIR}/bot/main.py  -l ${MOONRAKER_BOT_LOG}
+ExecStart=${MOONRAKER_BOT_ENV}/bin/python ${MOONRAKER_BOT_DIR}/bot/main.py -c ${MOONRAKER_BOT_CONF}/telegram.conf -l ${MOONRAKER_BOT_LOG}
 Restart=always
 RestartSec=5
 EOF

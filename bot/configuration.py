@@ -249,6 +249,8 @@ class CameraConfig(ConfigHelper):
         self.picture_quality: str = self._get_str("picture_quality", default="high", allowed_values=["low", "high"])
         self.cv2_params = config.items("camera.cv2") if config.has_section("camera.cv2") else []
 
+class CameraConfig2(CameraConfig):
+    _section = "camera2"
 
 class NotifierConfig(ConfigHelper):
     _section = "progress_notification"
@@ -398,6 +400,7 @@ class ConfigWrapper:
         self.secrets = SecretsConfig(config)
         self.bot_config = BotConfig(config)
         self.camera = CameraConfig(config)
+        self.camera2 = CameraConfig2(config)
         self.notifications = NotifierConfig(config)
         self.timelapse = TimelapseConfig(config)
         self.telegram_ui = TelegramUIConfig(config)
@@ -405,6 +408,7 @@ class ConfigWrapper:
         self.unknown_fields = (
             self.bot_config.unknown_fields
             + self.camera.unknown_fields
+            + self.camera2.unknown_fields
             + self.notifications.unknown_fields
             + self.timelapse.unknown_fields
             + self.telegram_ui.unknown_fields
@@ -414,6 +418,7 @@ class ConfigWrapper:
             self.secrets.parsing_errors
             + self.bot_config.parsing_errors
             + self.camera.parsing_errors
+            + self.camera2.parsing_errors
             + self.notifications.parsing_errors
             + self.timelapse.parsing_errors
             + self.telegram_ui.parsing_errors

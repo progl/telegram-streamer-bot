@@ -104,6 +104,8 @@ scheduler.add_listener(errors_listener, EVENT_JOB_ERROR)
 configWrap: ConfigWrapper
 main_pid = os.getpid()
 cameraWrap: Camera
+cameraWrap2: Camera
+camera_wraps: [Camera,Camera]
 timelapse: Timelapse
 notifier: Notifier
 klippy: Klippy
@@ -146,25 +148,25 @@ def status(update: Update, _: CallbackContext) -> None:
         time.sleep(configWrap.camera.light_timeout + 1.5)
         update.effective_message.delete()
     else:
-
-        if cameraWrap.enabled:
-            with cameraWrap.take_photo() as bio:
-                update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id, action=ChatAction.UPLOAD_PHOTO)
-                update.effective_message.reply_photo(
-                    photo=bio,
-                    caption='cameraWrap',
+        for cameraWrap in camera_wraps:
+            if cameraWrap.enabled:
+                with cameraWrap.take_photo() as bio:
+                    update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id, action=ChatAction.UPLOAD_PHOTO)
+                    update.effective_message.reply_photo(
+                        photo=bio,
+                        caption='cameraWrap',
+                        parse_mode=PARSEMODE_HTML,
+                        disable_notification=notifier.silent_commands,
+                    )
+                    bio.close()
+            else:
+                update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id, action=ChatAction.TYPING)
+                update.effective_message.reply_text(
+                    'No camera',
                     parse_mode=PARSEMODE_HTML,
                     disable_notification=notifier.silent_commands,
+                    quote=True,
                 )
-                bio.close()
-        else:
-            update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id, action=ChatAction.TYPING)
-            update.effective_message.reply_text(
-                'No camera',
-                parse_mode=PARSEMODE_HTML,
-                disable_notification=notifier.silent_commands,
-                quote=True,
-            )
 
 
 def check_unfinished_lapses(bot: telegram.Bot):
@@ -964,21 +966,21 @@ def start_bot(bot_token, socks):
     dispatcher.add_handler(CommandHandler("help", help_command, run_async=True))
     dispatcher.add_handler(CommandHandler("status", status, run_async=True))
     dispatcher.add_handler(CommandHandler("video", get_video))
-    dispatcher.add_handler(CommandHandler("pause", pause_printing))
-    dispatcher.add_handler(CommandHandler("resume", resume_printing))
-    dispatcher.add_handler(CommandHandler("cancel", cancel_printing))
-    dispatcher.add_handler(CommandHandler("power", power))
-    dispatcher.add_handler(CommandHandler("light", light_toggle))
-    dispatcher.add_handler(CommandHandler("emergency", emergency_stop))
-    dispatcher.add_handler(CommandHandler("shutdown", shutdown_host))
-    dispatcher.add_handler(CommandHandler("reboot", reboot_host))
+    # dispatcher.add_handler(CommandHandler("pause", pause_printing))
+    # dispatcher.add_handler(CommandHandler("resume", resume_printing))
+    # dispatcher.add_handler(CommandHandler("cancel", cancel_printing))
+    # dispatcher.add_handler(CommandHandler("power", power))
+    # dispatcher.add_handler(CommandHandler("light", light_toggle))
+    # dispatcher.add_handler(CommandHandler("emergency", emergency_stop))
+    # dispatcher.add_handler(CommandHandler("shutdown", shutdown_host))
+    # dispatcher.add_handler(CommandHandler("reboot", reboot_host))
     dispatcher.add_handler(CommandHandler("bot_restart", bot_restart))
-    dispatcher.add_handler(CommandHandler("fw_restart", firmware_restart))
-    dispatcher.add_handler(CommandHandler("services", services_keyboard))
-    dispatcher.add_handler(CommandHandler("files", get_gcode_files, run_async=True))
-    dispatcher.add_handler(CommandHandler("macros", get_macros, run_async=True))
-    dispatcher.add_handler(CommandHandler("gcode", exec_gcode, run_async=True))
-    dispatcher.add_handler(CommandHandler("logs", send_logs, run_async=True))
+    # dispatcher.add_handler(CommandHandler("fw_restart", firmware_restart))
+    # dispatcher.add_handler(CommandHandler("services", services_keyboard))
+    # dispatcher.add_handler(CommandHandler("files", get_gcode_files, run_async=True))
+    # dispatcher.add_handler(CommandHandler("macros", get_macros, run_async=True))
+    # dispatcher.add_handler(CommandHandler("gcode", exec_gcode, run_async=True))
+    # dispatcher.add_handler(CommandHandler("logs", send_logs, run_async=True))
 
     dispatcher.add_handler(MessageHandler(Filters.command, macros_handler, run_async=True))
 
@@ -1044,7 +1046,9 @@ if __name__ == "__main__":
 
 
     klippy = Klippy(configWrap,  rotatingHandler)
-    cameraWrap = Camera(configWrap, klippy,  rotatingHandler)
+    cameraWrap = Camera(configWrap, klippy,  rotatingHandler, configWrap.camera)
+    cameraWrap2 = Camera(configWrap, klippy,  rotatingHandler, configWrap.camera2)
+    camera_wraps= [cameraWrap, cameraWrap2]
     bot_updater = start_bot(configWrap.secrets.token, configWrap.bot_config.socks_proxy)
     timelapse = Timelapse(configWrap, klippy, cameraWrap, scheduler, bot_updater.bot, rotatingHandler)
     notifier = Notifier(configWrap, bot_updater.bot, klippy, cameraWrap, scheduler, rotatingHandler)
