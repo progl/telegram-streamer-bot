@@ -228,6 +228,7 @@ class CameraConfig(ConfigHelper):
         "fps",
         "light_control_timeout",
         "picture_quality",
+        "name",
     ]
 
     def __init__(self, config: configparser.ConfigParser):
@@ -248,6 +249,7 @@ class CameraConfig(ConfigHelper):
         self.light_timeout: int = self._get_int("light_control_timeout", default=0, min_value=0)
         self.picture_quality: str = self._get_str("picture_quality", default="high", allowed_values=["low", "high"])
         self.cv2_params = config.items("camera.cv2") if config.has_section("camera.cv2") else []
+        self.name = config.items(f"{self._section}.name") if config.has_section(f"{self._section}.name") else None
 
 class CameraConfig2(CameraConfig):
     _section = "camera2"
