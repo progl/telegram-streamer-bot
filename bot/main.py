@@ -16,6 +16,7 @@ import time
 from typing import Dict, List, Union
 from zipfile import ZipFile
 
+import requests
 from apscheduler.events import EVENT_JOB_ERROR  # type: ignore
 from apscheduler.schedulers.background import BackgroundScheduler  # type: ignore
 import emoji
@@ -167,6 +168,112 @@ def status(update: Update, _: CallbackContext) -> None:
                     disable_notification=notifier.silent_commands,
                     quote=True,
                 )
+
+
+def close_windows(update: Update, _: CallbackContext) -> None:
+    if update.effective_message is None or update.effective_message.bot is None:
+        logger.warning("Undefined effective message or bot")
+        return
+
+    if klippy.printing and not configWrap.notifications.group_only:
+        notifier.update_status()
+        time.sleep(configWrap.camera.light_timeout + 1.5)
+        update.effective_message.delete()
+    else:
+        data = {
+            'TargetProcent': '0'
+        }
+        url = 'http://drivent-dc5.lan/'
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Origin': 'http://drivent-dc5.lan',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': '16',
+            'Accept-Language': 'ru',
+            'Upgrade-Insecure-Requests': '1',
+            'Host': 'drivent-dc5.lan',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.1 Safari/605.1.15',
+            'Referer': 'http://drivent-dc5.lan/',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive'
+        }
+        requests.post(url, headers=headers, data=data)
+        url = 'http://192.168.1.109/'
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Origin': 'http://192.168.1.109',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': '15',
+            'Accept-Language': 'ru',
+            'Upgrade-Insecure-Requests': '1',
+            'Host': '192.168.1.109',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.1 Safari/605.1.15',
+            'Referer': 'http://192.168.1.109/',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive'
+        }
+        requests.post(url, headers=headers, data=data)
+
+        update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id,
+                                                      action=ChatAction.TYPING)
+        update.effective_message.reply_text(
+            text=f'closed',
+            disable_notification=notifier.silent_commands,
+        )
+
+
+def open_windows(update: Update, _: CallbackContext) -> None:
+    if update.effective_message is None or update.effective_message.bot is None:
+        logger.warning("Undefined effective message or bot")
+        return
+
+    if klippy.printing and not configWrap.notifications.group_only:
+        notifier.update_status()
+        time.sleep(configWrap.camera.light_timeout + 1.5)
+        update.effective_message.delete()
+    else:
+        data = {
+            'TargetProcent': '100'
+        }
+        url = 'http://drivent-dc5.lan/'
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Origin': 'http://drivent-dc5.lan',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': '16',
+            'Accept-Language': 'ru',
+            'Upgrade-Insecure-Requests': '1',
+            'Host': 'drivent-dc5.lan',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.1 Safari/605.1.15',
+            'Referer': 'http://drivent-dc5.lan/',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive'
+        }
+        requests.post(url, headers=headers, data=data)
+        url = 'http://192.168.1.109/'
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Origin': 'http://192.168.1.109',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': '15',
+            'Accept-Language': 'ru',
+            'Upgrade-Insecure-Requests': '1',
+            'Host': '192.168.1.109',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.1 Safari/605.1.15',
+            'Referer': 'http://192.168.1.109/',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive'
+        }
+        requests.post(url, headers=headers, data=data)
+
+        update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id,
+                                                      action=ChatAction.TYPING)
+        update.effective_message.reply_text(
+            text=f'opened',
+            disable_notification=notifier.silent_commands,
+        )
+
+
 
 
 def check_unfinished_lapses(bot: telegram.Bot):
@@ -860,18 +967,18 @@ def bot_commands() -> Dict[str, str]:
     commands = {
         "help": "list bot commands",
         "status": "send klipper status",
-        "pause": "pause printing",
-        "resume": "resume printing",
-        "cancel": "cancel printing",
-        "files": "list gcode files. you can start printing one from menu",
-        "logs": "get klipper, moonraker, bot logs",
-        "macros": "list all visible macros from klipper",
-        "gcode": 'run any gcode command, spaces are supported. "gcode G28 Z"',
+        # "pause": "pause printing",
+        # "resume": "resume printing",
+        # "cancel": "cancel printing",
+        # "files": "list gcode files. you can start printing one from menu",
+        # "logs": "get klipper, moonraker, bot logs",
+        # "macros": "list all visible macros from klipper",
+        # "gcode": 'run any gcode command, spaces are supported. "gcode G28 Z"',
         "video": "will take mp4 video from camera",
-        "power": "toggle moonraker power device from config",
-        "light": "toggle light",
-        "emergency": "emergency stop printing",
-        "bot_restart": "restarts the bot service, useful for config updates",
+        # "power": "toggle moonraker power device from config",
+        # "light": "toggle light",
+        # "emergency": "emergency stop printing",
+        # "bot_restart": "restarts the bot service, useful for config updates",
         "shutdown": "shutdown Pi gracefully",
         "reboot": "reboot Pi gracefully",
     }
@@ -965,22 +1072,10 @@ def start_bot(bot_token, socks):
     dispatcher.add_handler(CallbackQueryHandler(button_handler))
     dispatcher.add_handler(CommandHandler("help", help_command, run_async=True))
     dispatcher.add_handler(CommandHandler("status", status, run_async=True))
+    dispatcher.add_handler(CommandHandler("close_windows", close_windows, run_async=True))
+
     dispatcher.add_handler(CommandHandler("video", get_video))
-    # dispatcher.add_handler(CommandHandler("pause", pause_printing))
-    # dispatcher.add_handler(CommandHandler("resume", resume_printing))
-    # dispatcher.add_handler(CommandHandler("cancel", cancel_printing))
-    # dispatcher.add_handler(CommandHandler("power", power))
-    # dispatcher.add_handler(CommandHandler("light", light_toggle))
-    # dispatcher.add_handler(CommandHandler("emergency", emergency_stop))
-    # dispatcher.add_handler(CommandHandler("shutdown", shutdown_host))
-    # dispatcher.add_handler(CommandHandler("reboot", reboot_host))
     dispatcher.add_handler(CommandHandler("bot_restart", bot_restart))
-    # dispatcher.add_handler(CommandHandler("fw_restart", firmware_restart))
-    # dispatcher.add_handler(CommandHandler("services", services_keyboard))
-    # dispatcher.add_handler(CommandHandler("files", get_gcode_files, run_async=True))
-    # dispatcher.add_handler(CommandHandler("macros", get_macros, run_async=True))
-    # dispatcher.add_handler(CommandHandler("gcode", exec_gcode, run_async=True))
-    # dispatcher.add_handler(CommandHandler("logs", send_logs, run_async=True))
 
     dispatcher.add_handler(MessageHandler(Filters.command, macros_handler, run_async=True))
 
