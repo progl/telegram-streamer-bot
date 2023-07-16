@@ -967,6 +967,8 @@ def bot_commands() -> Dict[str, str]:
     commands = {
         "help": "list bot commands",
         "status": "send klipper status",
+        "open windows": "open",
+        "close windows": "close",
         # "pause": "pause printing",
         # "resume": "resume printing",
         # "cancel": "cancel printing",
@@ -1072,7 +1074,9 @@ def start_bot(bot_token, socks):
     dispatcher.add_handler(CallbackQueryHandler(button_handler))
     dispatcher.add_handler(CommandHandler("help", help_command, run_async=True))
     dispatcher.add_handler(CommandHandler("status", status, run_async=True))
+
     dispatcher.add_handler(CommandHandler("close_windows", close_windows, run_async=True))
+    dispatcher.add_handler(CommandHandler("open_windows", open_windows, run_async=True))
 
     dispatcher.add_handler(CommandHandler("video", get_video))
     dispatcher.add_handler(CommandHandler("bot_restart", bot_restart))
