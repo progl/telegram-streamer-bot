@@ -356,7 +356,9 @@ class TelegramUIConfig(ConfigHelper):
                         el.replace("[", "").replace("]", "").split(","),
                     )
                 ),
-                re.findall(r"\[.[^\]]*\]", self._get_str("buttons", default="[status,timelapse_start, timelapse_stop]")),
+
+                re.findall(r"\[.[^\]]*\]", self._get_str("buttons",
+                                                         default="[status, close_windows, open_windows, timelapse_start, timelapse_stop]")),
             )
         )
         self.require_confirmation_macro: bool = self._get_boolean("require_confirmation_macro", default=True)
