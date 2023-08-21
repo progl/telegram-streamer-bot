@@ -274,6 +274,78 @@ def open_windows(update: Update, _: CallbackContext) -> None:
         )
 
 
+def timelapse_start(update: Update, _: CallbackContext) -> None:
+    if update.effective_message is None or update.effective_message.bot is None:
+        logger.warning("Undefined effective message or bot")
+        return
+
+    ws_helper._timelapse.clean()
+    ws_helper._timelapse.is_running = True
+
+    update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id,
+                                                  action=ChatAction.TYPING)
+    update.effective_message.reply_text(
+        text=f'started',
+        disable_notification=notifier.silent_commands,
+    )
+
+
+def timelapse_stop(update: Update, _: CallbackContext) -> None:
+    if update.effective_message is None or update.effective_message.bot is None:
+        logger.warning("Undefined effective message or bot")
+        return
+    ws_helper._timelapse.is_running = False
+    ws_helper._timelapse.paused = False
+    ws_helper._timelapse.send_timelapse()
+
+    update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id,
+                                                  action=ChatAction.TYPING)
+    update.effective_message.reply_text(
+        text=f'stopped',
+        disable_notification=notifier.silent_commands,
+    )
+
+
+def timelapse_send(update: Update, _: CallbackContext) -> None:
+    if update.effective_message is None or update.effective_message.bot is None:
+        logger.warning("Undefined effective message or bot")
+        return
+
+    ws_helper._timelapse.send_timelapse()
+
+    update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id,
+                                                  action=ChatAction.TYPING)
+    update.effective_message.reply_text(
+        text=f'sended',
+        disable_notification=notifier.silent_commands,
+    )
+
+
+def timelapse_pause(update: Update, _: CallbackContext) -> None:
+    if update.effective_message is None or update.effective_message.bot is None:
+        logger.warning("Undefined effective message or bot")
+        return
+    ws_helper._timelapse.paused = True
+    update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id,
+                                                  action=ChatAction.TYPING)
+    update.effective_message.reply_text(
+        text=f'paused',
+        disable_notification=notifier.silent_commands,
+    )
+
+def timelapse_resume(update: Update, _: CallbackContext) -> None:
+    if update.effective_message is None or update.effective_message.bot is None:
+        logger.warning("Undefined effective message or bot")
+        return
+    ws_helper._timelapse.paused = False
+    update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id,
+                                                  action=ChatAction.TYPING)
+    update.effective_message.reply_text(
+        text=f'resumed',
+        disable_notification=notifier.silent_commands,
+    )
+
+
 
 
 def check_unfinished_lapses(bot: telegram.Bot):
@@ -977,6 +1049,15 @@ def bot_commands() -> Dict[str, str]:
         # "macros": "list all visible macros from klipper",
         # "gcode": 'run any gcode command, spaces are supported. "gcode G28 Z"',
         "video": "will take mp4 video from camera",
+        # "timelapse_start": "timelapse_start",
+        # "timelapse_stop": "timelapse_stop",
+        # "timelapse_pause": "timelapse_pause",
+        # "timelapse_resume": "timelapse_resume",
+        # "timelapse_send": "timelapse_send",
+
+
+
+
         # "power": "toggle moonraker power device from config",
         # "light": "toggle light",
         # "emergency": "emergency stop printing",
@@ -1045,9 +1126,12 @@ def greeting_message(bot: telegram.Bot) -> None:
         reply_markup=reply_markup,
         disable_notification=notifier.silent_status,
     )
+    print('prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list)', prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list))
     bot.set_my_commands(commands=prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list))
     klippy.add_bot_announcements_feed()
     check_unfinished_lapses(bot)
+
+
 
 
 def start_bot(bot_token, socks):
@@ -1079,7 +1163,21 @@ def start_bot(bot_token, socks):
     dispatcher.add_handler(CommandHandler("open_windows", open_windows, run_async=True))
 
     dispatcher.add_handler(CommandHandler("video", get_video))
+
+    dispatcher.add_handler(CommandHandler("timelapse_start", timelapse_start) )
+    dispatcher.add_handler(CommandHandler("timelapse_stop", timelapse_stop) )
+    dispatcher.add_handler(CommandHandler("timelapse_pause", timelapse_pause) )
+    dispatcher.add_handler(CommandHandler("timelapse_resume", timelapse_resume) )
+    dispatcher.add_handler(CommandHandler("timelapse_send", timelapse_send) )
+
+
+
+
+
+
     dispatcher.add_handler(CommandHandler("bot_restart", bot_restart))
+
+
 
     dispatcher.add_handler(MessageHandler(Filters.command, macros_handler, run_async=True))
 

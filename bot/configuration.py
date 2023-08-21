@@ -358,9 +358,16 @@ class TelegramUIConfig(ConfigHelper):
                 ),
 
                 re.findall(r"\[.[^\]]*\]", self._get_str("buttons",
-                                                         default="[status, close_windows, open_windows, timelapse_start, timelapse_stop]")),
+                                                         default="[status, close_windows, open_windows, "
+                                                                 "timelapse_start, timelapse_stop, timelapse_pause, timelapse_resume, timelapse_send]")),
             )
         )
+
+
+
+
+
+
         self.require_confirmation_macro: bool = self._get_boolean("require_confirmation_macro", default=True)
         self.require_confirmation_services: bool = self._get_boolean("require_confirmation_services", default=True)
         self.progress_update_message: bool = self._get_boolean("progress_update_message", default=False)
