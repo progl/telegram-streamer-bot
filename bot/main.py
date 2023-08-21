@@ -1235,7 +1235,7 @@ if __name__ == "__main__":
 
     logger.error(configWrap.parsing_errors + "\n" + configWrap.unknown_fields)
 
-    if configWrap.bot_config.debug  :
+    if configWrap.bot_config.debug or 1==1:
         faulthandler.enable()
         logger.setLevel(logging.DEBUG)
         logging.getLogger("apscheduler").addHandler(rotatingHandler)
@@ -1247,13 +1247,18 @@ if __name__ == "__main__":
     cameraWrap2 = Camera(configWrap, klippy,  rotatingHandler, configWrap.camera2, configWrap.camera2.name)
     camera_wraps= [cameraWrap, cameraWrap2]
     bot_updater = start_bot(configWrap.secrets.token, configWrap.bot_config.socks_proxy)
-    timelapse = Timelapse(configWrap, klippy, cameraWrap, scheduler, bot_updater.bot, rotatingHandler)
+    timelapse = Timelapse(configWrap, klippy, cameraWrap2, scheduler, bot_updater.bot, rotatingHandler)
     notifier = Notifier(configWrap, bot_updater.bot, klippy, cameraWrap, scheduler, rotatingHandler)
     ws_helper = WebSocketHelper(configWrap, klippy, notifier, timelapse, scheduler,  rotatingHandler)
 
     scheduler.start()
 
     greeting_message(bot_updater.bot)
+
+    # print('take_test_lapse_photo')
+    # timelapse.take_test_lapse_photo()
+    # print('self._camera.take_lapse_photo')
+    # timelapse._camera.take_lapse_photo()
 
     ws_helper.run_forever()
 

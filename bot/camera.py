@@ -406,6 +406,7 @@ class Camera:
 
     def take_lapse_photo(self, gcode: str = "") -> None:
         # Todo: check for space available?
+        print('self.lapse_dir)', self.lapse_dir)
         Path(self.lapse_dir).mkdir(parents=True, exist_ok=True)
         # never add self in params there!
         with self.take_photo() as photo:
