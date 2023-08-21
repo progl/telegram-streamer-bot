@@ -182,21 +182,20 @@ class Timelapse:
         if not self._enabled:
             logger.debug("lapse is disabled")
             return
-        elif not self._klippy.printing_filename:
-            logger.debug("lapse is inactive for file undefined")
-            return
+        # elif not self._klippy.printing_filename:
+        #     logger.debug("lapse is inactive for file undefined")
+        #     return
         elif not self._running:
             logger.debug("lapse is not running at the moment")
             return
         elif self._paused and not manually:
             logger.debug("lapse is paused at the moment")
             return
-        elif not self._mode_manual and self._klippy.printing_duration <= 0.0:
-            logger.debug("lapse must not run with auto mode and zero print duration")
-            return
+        # elif not self._mode_manual and self._klippy.printing_duration <= 0.0:
+        #     logger.debug("lapse must not run with auto mode and zero print duration")
+        #     return
 
         gcode_command = self._after_photo_gcode if gcode and self._after_photo_gcode else ""
-
         if self._height > 0.0 and (position_z >= self._last_height + self._height or 0.0 < position_z < self._last_height - self._height):
             self._executors_pool.submit(self._camera.take_lapse_photo, gcode=gcode_command).add_done_callback(logging_callback)
             self._last_height = position_z
