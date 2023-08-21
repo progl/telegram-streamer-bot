@@ -1272,8 +1272,8 @@ if __name__ == "__main__":
 
     greeting_message(bot_updater.bot)
 
-    print('_send_lapse')
-    timelapse._send_lapse()
+    # print('_send_lapse')
+    # timelapse._send_lapse()
     # print('self._camera.take_lapse_photo')
     # timelapse._camera.take_lapse_photo()
 
