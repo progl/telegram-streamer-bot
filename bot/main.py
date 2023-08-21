@@ -1126,7 +1126,7 @@ def greeting_message(bot: telegram.Bot) -> None:
         reply_markup=reply_markup,
         disable_notification=notifier.silent_status,
     )
-    print('prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list)', prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list))
+    # print('prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list)', prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list))
     # bot.set_my_commands(commands=prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list))
     # klippy.add_bot_announcements_feed()
     check_unfinished_lapses(bot)
@@ -1235,7 +1235,7 @@ if __name__ == "__main__":
 
     logger.error(configWrap.parsing_errors + "\n" + configWrap.unknown_fields)
 
-    if configWrap.bot_config.debug or 1==1:
+    if configWrap.bot_config.debug  :
         faulthandler.enable()
         logger.setLevel(logging.DEBUG)
         logging.getLogger("apscheduler").addHandler(rotatingHandler)
