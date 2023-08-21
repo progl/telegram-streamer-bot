@@ -1127,8 +1127,8 @@ def greeting_message(bot: telegram.Bot) -> None:
         disable_notification=notifier.silent_status,
     )
     print('prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list)', prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list))
-    bot.set_my_commands(commands=prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list))
-    klippy.add_bot_announcements_feed()
+    # bot.set_my_commands(commands=prepare_commands_list(klippy.macros, configWrap.telegram_ui.include_macros_in_command_list))
+    # klippy.add_bot_announcements_feed()
     check_unfinished_lapses(bot)
 
 
@@ -1235,7 +1235,7 @@ if __name__ == "__main__":
 
     logger.error(configWrap.parsing_errors + "\n" + configWrap.unknown_fields)
 
-    if configWrap.bot_config.debug:
+    if configWrap.bot_config.debug or 1==1:
         faulthandler.enable()
         logger.setLevel(logging.DEBUG)
         logging.getLogger("apscheduler").addHandler(rotatingHandler)
@@ -1249,7 +1249,6 @@ if __name__ == "__main__":
     bot_updater = start_bot(configWrap.secrets.token, configWrap.bot_config.socks_proxy)
     timelapse = Timelapse(configWrap, klippy, cameraWrap, scheduler, bot_updater.bot, rotatingHandler)
     notifier = Notifier(configWrap, bot_updater.bot, klippy, cameraWrap, scheduler, rotatingHandler)
-
     ws_helper = WebSocketHelper(configWrap, klippy, notifier, timelapse, scheduler,  rotatingHandler)
 
     scheduler.start()
