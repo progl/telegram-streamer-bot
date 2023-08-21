@@ -63,6 +63,7 @@ class Timelapse:
         self._running: bool = False
         self._paused: bool = False
         self._last_height: float = 0.0
+        self.cleanup=False
 
         self._executors_pool: ThreadPoolExecutor = ThreadPoolExecutor(2, thread_name_prefix="timelapse_pool")
 
@@ -232,7 +233,7 @@ class Timelapse:
             )
 
     def _send_lapse(self) -> None:
-        if not self._enabled or not self._klippy.printing_filename:
+        if not self._enabled:
             logger.debug("lapse is inactive for enabled %s or file undefined", self.enabled)
         else:
             lapse_filename = self._klippy.printing_filename_with_time
@@ -281,7 +282,8 @@ class Timelapse:
                         self._bot.delete_message(self._chat_id, message_id=info_mess.message_id)
                     except BadRequest as badreq:
                         logger.warning("Failed deleting message \n%s", badreq)
-                    self._camera.cleanup(lapse_filename)
+                    if self.cleanup:
+                        self._camera.cleanup(lapse_filename)
             else:
                 info_mess.edit_text(text="Time-lapse creation finished")
 

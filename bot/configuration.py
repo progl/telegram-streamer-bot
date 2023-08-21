@@ -359,7 +359,8 @@ class TelegramUIConfig(ConfigHelper):
 
                 re.findall(r"\[.[^\]]*\]", self._get_str("buttons",
                                                          default="[status, close_windows, open_windows, "
-                                                                 "timelapse_start, timelapse_stop, timelapse_pause, timelapse_resume, timelapse_send]")),
+                                                                 "timelapse_start, timelapse_stop, timelapse_cleanup, "
+                                                                 "timelapse_pause, timelapse_resume, timelapse_send]")),
             )
         )
 

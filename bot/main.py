@@ -320,6 +320,22 @@ def timelapse_send(update: Update, _: CallbackContext) -> None:
         disable_notification=notifier.silent_commands,
     )
 
+def timelapse_cleanup(update: Update, _: CallbackContext) -> None:
+    if update.effective_message is None or update.effective_message.bot is None:
+        logger.warning("Undefined effective message or bot")
+        return
+
+    lapse_filename = ws_helper._timelapse._klippy.printing_filename_with_time
+    ws_helper._timelapse._._camera.cleanup(lapse_filename)
+
+    update.effective_message.bot.send_chat_action(chat_id=configWrap.secrets.chat_id,
+                                                  action=ChatAction.TYPING)
+    update.effective_message.reply_text(
+        text=f'sended',
+        disable_notification=notifier.silent_commands,
+    )
+
+
 
 def timelapse_pause(update: Update, _: CallbackContext) -> None:
     if update.effective_message is None or update.effective_message.bot is None:
@@ -1167,6 +1183,7 @@ def start_bot(bot_token, socks):
     dispatcher.add_handler(CommandHandler("timelapse_start", timelapse_start) )
     dispatcher.add_handler(CommandHandler("timelapse_stop", timelapse_stop) )
     dispatcher.add_handler(CommandHandler("timelapse_pause", timelapse_pause) )
+    dispatcher.add_handler(CommandHandler("timelapse_cleanup", timelapse_cleanup) )
     dispatcher.add_handler(CommandHandler("timelapse_resume", timelapse_resume) )
     dispatcher.add_handler(CommandHandler("timelapse_send", timelapse_send) )
 
@@ -1235,7 +1252,7 @@ if __name__ == "__main__":
 
     logger.error(configWrap.parsing_errors + "\n" + configWrap.unknown_fields)
 
-    if configWrap.bot_config.debug or 1==1:
+    if configWrap.bot_config.debug:
         faulthandler.enable()
         logger.setLevel(logging.DEBUG)
         logging.getLogger("apscheduler").addHandler(rotatingHandler)
@@ -1255,8 +1272,8 @@ if __name__ == "__main__":
 
     greeting_message(bot_updater.bot)
 
-    # print('take_test_lapse_photo')
-    # timelapse.take_test_lapse_photo()
+    print('_send_lapse')
+    timelapse._send_lapse()
     # print('self._camera.take_lapse_photo')
     # timelapse._camera.take_lapse_photo()
 
