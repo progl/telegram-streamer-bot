@@ -1,7 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
+import datetime
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 
+import pytz
 from apscheduler.schedulers.base import BaseScheduler  # type: ignore
 from telegram import Bot, ChatAction, Message
 from telegram.error import BadRequest
@@ -24,13 +26,13 @@ def logging_callback(future):
 
 class Timelapse:
     def __init__(
-        self,
-        config: ConfigWrapper,
-        klippy: Klippy,
-        camera: Camera,
-        scheduler: BaseScheduler,
-        bot: Bot,
-        logging_handler: logging.Handler,
+            self,
+            config: ConfigWrapper,
+            klippy: Klippy,
+            camera: Camera,
+            scheduler: BaseScheduler,
+            bot: Bot,
+            logging_handler: logging.Handler,
     ):
         self._enabled: bool = config.timelapse.enabled and camera.enabled
         self._mode_manual: bool = config.timelapse.mode_manual
@@ -46,6 +48,9 @@ class Timelapse:
         self._after_photo_gcode: str = config.timelapse.after_photo_gcode
 
         self._silent_progress: bool = config.telegram_ui.silent_progress
+
+        self.hours_min: int = config.timelapse.hours_min
+        self.hours_max: int = config.timelapse.hours_max
 
         self._klippy: Klippy = klippy
         self._camera: Camera = camera
@@ -63,7 +68,7 @@ class Timelapse:
         self._running: bool = False
         self._paused: bool = False
         self._last_height: float = 0.0
-        self.cleanup=False
+        self.cleanup = False
 
         self._executors_pool: ThreadPoolExecutor = ThreadPoolExecutor(2, thread_name_prefix="timelapse_pool")
 
@@ -128,7 +133,8 @@ class Timelapse:
     def min_lapse_duration(self, new_value: int):
         if new_value >= 0:
             if new_value <= self._max_lapse_duration and new_value != 0:
-                logger.warning("Min lapse duration %s is lower than max lapse duration %s", new_value, self._max_lapse_duration)
+                logger.warning("Min lapse duration %s is lower than max lapse duration %s", new_value,
+                               self._max_lapse_duration)
             self._min_lapse_duration = new_value
             self._camera.min_lapse_duration = new_value
 
@@ -140,7 +146,8 @@ class Timelapse:
     def max_lapse_duration(self, new_value: int):
         if new_value >= 0:
             if new_value <= self._min_lapse_duration and new_value != 0:
-                logger.warning("Max lapse duration %s is lower than min lapse duration %s", new_value, self._min_lapse_duration)
+                logger.warning("Max lapse duration %s is lower than min lapse duration %s", new_value,
+                               self._min_lapse_duration)
             self._max_lapse_duration = new_value
             self._camera.max_lapse_duration = new_value
 
@@ -192,16 +199,25 @@ class Timelapse:
         elif self._paused and not manually:
             logger.debug("lapse is paused at the moment")
             return
-        # elif not self._mode_manual and self._klippy.printing_duration <= 0.0:
-        #     logger.debug("lapse must not run with auto mode and zero print duration")
-        #     return
+
+        moscow_tz = pytz.timezone('Europe/Moscow')
+        moscow_time = datetime.datetime.now(moscow_tz)
+
+        hour = moscow_time.hour
+
+        if not (hour > self.hours_min and hour < self.hours_max):
+            print(f'пропускаем снимок из-за настроек часовых  hour {hour} < hours_min {self.hours_max} and > hours_max {self.hours_max} ')
+            return
 
         gcode_command = self._after_photo_gcode if gcode and self._after_photo_gcode else ""
-        if self._height > 0.0 and (position_z >= self._last_height + self._height or 0.0 < position_z < self._last_height - self._height):
-            self._executors_pool.submit(self._camera.take_lapse_photo, gcode=gcode_command).add_done_callback(logging_callback)
+        if self._height > 0.0 and (
+                position_z >= self._last_height + self._height or 0.0 < position_z < self._last_height - self._height):
+            self._executors_pool.submit(self._camera.take_lapse_photo, gcode=gcode_command).add_done_callback(
+                logging_callback)
             self._last_height = position_z
         elif position_z < -1000:
-            self._executors_pool.submit(self._camera.take_lapse_photo, gcode=gcode_command).add_done_callback(logging_callback)
+            self._executors_pool.submit(self._camera.take_lapse_photo, gcode=gcode_command).add_done_callback(
+                logging_callback)
 
     def take_test_lapse_photo(self) -> None:
         self._executors_pool.submit(self._camera.take_lapse_photo).add_done_callback(logging_callback)
@@ -266,7 +282,8 @@ class Timelapse:
                 info_mess.edit_text(text="Uploading time-lapse")
 
                 if video_bio.getbuffer().nbytes > 52428800:
-                    info_mess.edit_text(text=f"Telegram bots have a 50mb filesize restriction, please retrieve the timelapse from the configured folder\n{video_path}")
+                    info_mess.edit_text(
+                        text=f"Telegram bots have a 50mb filesize restriction, please retrieve the timelapse from the configured folder\n{video_path}")
                 else:
                     self._bot.send_video(
                         self._chat_id,
@@ -350,9 +367,11 @@ class Timelapse:
                     self._after_photo_gcode = part.split(sep="=").pop()
                     response += f"after_photo_gcode={self._after_photo_gcode} "
                 else:
-                    self._klippy.execute_gcode_script(f'RESPOND PREFIX="Timelapse params error" MSG="unknown param `{part}`"')
+                    self._klippy.execute_gcode_script(
+                        f'RESPOND PREFIX="Timelapse params error" MSG="unknown param `{part}`"')
             except Exception as ex:
-                self._klippy.execute_gcode_script(f'RESPOND PREFIX="Timelapse params error" MSG="Failed parsing `{part}`. {ex}"')
+                self._klippy.execute_gcode_script(
+                    f'RESPOND PREFIX="Timelapse params error" MSG="Failed parsing `{part}`. {ex}"')
         if response:
             full_conf = (
                 f"enabled={self.enabled} "
@@ -367,5 +386,7 @@ class Timelapse:
                 f"send_finished_lapse={self._send_finished_lapse} "
                 f"after_photo_gcode={self._after_photo_gcode} "
             )
-            self._klippy.execute_gcode_script(f'RESPOND PREFIX="Timelapse params" MSG="Changed timelapse params: {response}"')
-            self._klippy.execute_gcode_script(f'RESPOND PREFIX="Timelapse params" MSG="Full timelapse config: {full_conf}"')
+            self._klippy.execute_gcode_script(
+                f'RESPOND PREFIX="Timelapse params" MSG="Changed timelapse params: {response}"')
+            self._klippy.execute_gcode_script(
+                f'RESPOND PREFIX="Timelapse params" MSG="Full timelapse config: {full_conf}"')

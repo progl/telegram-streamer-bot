@@ -56,6 +56,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+
+
+
 def handle_exception(exc_type, exc_value, exc_traceback):
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
@@ -1130,7 +1133,7 @@ def greeting_message(bot: telegram.Bot) -> None:
     if response:
         mess += escape(f"Bot online, no moonraker connection!\n {response} \nFailing...")
     else:
-        mess += "Printer online"
+        mess += "Bot-streamer online"
         if configWrap.configuration_errors:
             mess +=   configWrap.configuration_errors
 
@@ -1230,9 +1233,12 @@ if __name__ == "__main__":
     # Todo: os.chdir(Path(sys.path[0]).parent.absolute())
     os.chdir(sys.path[0])
 
+
     conf.read(system_args.configfile)
     configWrap = ConfigWrapper(conf)
     configWrap.bot_config.log_path_update(system_args.logfile)
+
+
 
     with open(configWrap.bot_config.log_file, "a", encoding="utf-8") as f:
         f.write("\n*******************************************************************\n")
@@ -1272,10 +1278,12 @@ if __name__ == "__main__":
 
     greeting_message(bot_updater.bot)
 
-    # print('_send_lapse')
-    # timelapse._send_lapse()
-    # print('self._camera.take_lapse_photo')
-    # timelapse._camera.take_lapse_photo()
+    if configWrap.timelapse.autostart:
+        ws_helper._timelapse.clean()
+        ws_helper._timelapse.is_running = True
+
+
+
 
     ws_helper.run_forever()
 

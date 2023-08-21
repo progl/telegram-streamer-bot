@@ -1,26 +1,61 @@
-from contextlib import contextmanager
-from functools import wraps
 import glob
-from io import BytesIO
 import logging
 import math
 import os
 import pathlib
-from pathlib import Path
-from queue import Queue
 import threading
 import time
+from contextlib import contextmanager
+from functools import wraps
+from io import BytesIO
+from pathlib import Path
+from queue import Queue
 from typing import List, Tuple
 
-from PIL import Image, _webp  # type: ignore
 import cv2  # type: ignore
+import requests
+from PIL import Image, _webp  # type: ignore
 from telegram import Message
 
 from configuration import ConfigWrapper
 from klippy import Klippy
 
-
 logger = logging.getLogger(__name__)
+
+
+def create_folder_if_not_exists(token, folder_path):
+    headers = {"Authorization": "OAuth " + token}
+    response = requests.put(f"https://cloud-api.yandex.net/v1/disk/resources?path={folder_path}", headers=headers)
+
+    if response.status_code == 201:
+        print(f'Папка {folder_path} успешно создана на Yandex Disk!')
+    elif response.status_code == 409:
+        print(f'Папка {folder_path} уже существует на Yandex Disk!')
+    else:
+        print(f'Ошибка при создании папки: {response.text}')
+
+
+def upload_to_yandex_disk(token, name, folder_path, file):
+    # Составляем полный путь к файлу на Yandex Disk
+    create_folder_if_not_exists(token, folder_path)
+    destination_path = f'{folder_path}/{name}'
+    # Получаем URL для загрузки
+    headers = {"Authorization": "OAuth " + token}
+    response = requests.get("https://cloud-api.yandex.net/v1/disk/resources/upload",
+                            params={"path": destination_path},
+                            headers=headers)
+
+    # Если успешно получили URL для загрузки
+    if response.status_code == 200:
+        upload_url = response.json()['href']
+        # Загружаем файл
+        upload_response = requests.put(upload_url, files={"file": file})
+        if upload_response.status_code == 201:
+            print(f'Файл {destination_path} успешно загружен в папку {folder_path} на Yandex Disk!')
+        else:
+            print(f'Ошибка при загрузке файла: {upload_response.text}')
+    else:
+        print(f'Ошибка при получении URL для загрузки: {response.text}')
 
 
 def cam_light_toggle(func):
@@ -62,13 +97,13 @@ def cam_light_toggle(func):
 
 class Camera:
     def __init__(
-        self,
-        config: ConfigWrapper,
-        klippy: Klippy,
-        logging_handler: logging.Handler,
-        camera, name
+            self,
+            config: ConfigWrapper,
+            klippy: Klippy,
+            logging_handler: logging.Handler,
+            camera, name
     ):
-        self.camera =  camera
+        self.camera = camera
         self.name = name
         self.enabled: bool = bool(self.camera.enabled and self.camera.host)
         self._host = int(self.camera.host) if str.isdigit(self.camera.host) else self.camera.host
@@ -85,6 +120,7 @@ class Camera:
         self._base_dir: str = config.timelapse.base_dir
         self._ready_dir: str = config.timelapse.ready_dir
         self._cleanup: bool = config.timelapse.cleanup
+        self.oauth_token: str = config.timelapse.oauth_token
 
         self._target_fps: int = 15
         self._min_lapse_duration: int = 0
@@ -410,20 +446,26 @@ class Camera:
         Path(self.lapse_dir).mkdir(parents=True, exist_ok=True)
         # never add self in params there!
         with self.take_photo() as photo:
-            filename = f"{self.lapse_dir}/{time.time()}.{self._img_extension}"
+            name = f"{time.time()}.{self._img_extension}"
+            filename = f"{self.lapse_dir}/{name}"
             if gcode:
                 try:
                     self._klippy.execute_gcode_script(gcode.strip())
                 except Exception as ex:
                     logger.error(ex)
             with open(filename, "wb") as outfile:
-                outfile.write(photo.getvalue())
+                t = photo.getvalue()
+                outfile.write(t)
+                if self.oauth_token:
+                    upload_to_yandex_disk(self.oauth_token, name, Path(self.lapse_dir).name, t)
             photo.close()
 
-    def create_timelapse(self, printing_filename: str, gcode_name: str, info_mess: Message) -> Tuple[BytesIO, BytesIO, int, int, str, str]:
+    def create_timelapse(self, printing_filename: str, gcode_name: str, info_mess: Message) -> Tuple[
+        BytesIO, BytesIO, int, int, str, str]:
         return self._create_timelapse(printing_filename, gcode_name, info_mess)
 
-    def create_timelapse_for_file(self, filename: str, info_mess: Message) -> Tuple[BytesIO, BytesIO, int, int, str, str]:
+    def create_timelapse_for_file(self, filename: str, info_mess: Message) -> Tuple[
+        BytesIO, BytesIO, int, int, str, str]:
         return self._create_timelapse(filename, filename, info_mess)
 
     def _calculate_fps(self, frames_count: int) -> int:
@@ -431,9 +473,10 @@ class Camera:
 
         # Todo: check _max_lapse_duration > _min_lapse_duration
         if (
-            (self._min_lapse_duration == 0 and self._max_lapse_duration == 0)
-            or (self._min_lapse_duration <= actual_duration <= self._max_lapse_duration and self._max_lapse_duration > 0)
-            or (actual_duration > self._min_lapse_duration and self._max_lapse_duration == 0)
+                (self._min_lapse_duration == 0 and self._max_lapse_duration == 0)
+                or (
+                self._min_lapse_duration <= actual_duration <= self._max_lapse_duration and self._max_lapse_duration > 0)
+                or (actual_duration > self._min_lapse_duration and self._max_lapse_duration == 0)
         ):
             return self._target_fps
         elif actual_duration < self._min_lapse_duration and self._min_lapse_duration > 0:
@@ -442,10 +485,12 @@ class Camera:
         elif actual_duration > self._max_lapse_duration > 0:
             return math.ceil(frames_count / self._max_lapse_duration)
         else:
-            logger.error("Unknown fps calculation state for durations min:%s and max:%s and actual:%s", self._min_lapse_duration, self._max_lapse_duration, actual_duration)
+            logger.error("Unknown fps calculation state for durations min:%s and max:%s and actual:%s",
+                         self._min_lapse_duration, self._max_lapse_duration, actual_duration)
             return self._target_fps
 
-    def _create_timelapse(self, printing_filename: str, gcode_name: str, info_mess: Message) -> Tuple[BytesIO, BytesIO, int, int, str, str]:
+    def _create_timelapse(self, printing_filename: str, gcode_name: str, info_mess: Message) -> Tuple[
+        BytesIO, BytesIO, int, int, str, str]:
         if not printing_filename:
             raise ValueError("Gcode file name is empty")
 

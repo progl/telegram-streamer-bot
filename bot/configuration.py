@@ -285,7 +285,15 @@ class TimelapseConfig(ConfigHelper):
         "after_lapse_gcode",
         "send_finished_lapse",
         "after_photo_gcode",
+        "hours_min",
+        "hours_max",
+        "autostart",
+        "yandex_upload_path",
+        "oauth_token",
+
     ]
+
+
 
     def __init__(self, config: configparser.ConfigParser):
         super().__init__(config)
@@ -295,6 +303,8 @@ class TimelapseConfig(ConfigHelper):
         self.cleanup: bool = self._get_boolean("cleanup", default=True)
         self.height: float = self._get_float("height", default=0.0, min_value=0.0)
         self.interval: int = self._get_int("time", default=0, min_value=0)
+        self.hours_min: int = self._get_int("hours_min", default=None, min_value=0)
+        self.hours_max: int = self._get_int("hours_max", default=None, max_value=23)
         self.target_fps: int = self._get_int("target_fps", default=15, above=0)
         self.min_lapse_duration: int = self._get_int("min_lapse_duration", default=0, min_value=0)  # Todo: check if max_value is max_lapse_duration
         self.max_lapse_duration: int = self._get_int("max_lapse_duration", default=0, min_value=0)  # Todo: check if min_value is more than min_lapse_duration
@@ -303,6 +313,8 @@ class TimelapseConfig(ConfigHelper):
         self.send_finished_lapse: bool = self._get_boolean("send_finished_lapse", default=True)
         self.mode_manual: bool = self._get_boolean("manual_mode", default=False)
         self.after_photo_gcode: str = self._get_str("after_photo_gcode", default="")
+        self.oauth_token: str = self._get_str("oauth_token", default=None)
+        self.autostart: bool = self._get_str("autostart", default=False)
 
         self._init_paths()
 
