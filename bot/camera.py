@@ -1,3 +1,4 @@
+import datetime
 import glob
 import logging
 import math
@@ -13,6 +14,7 @@ from queue import Queue
 from typing import List, Tuple
 
 import cv2  # type: ignore
+import pytz
 import requests
 from PIL import Image, _webp  # type: ignore
 from telegram import Message
@@ -37,7 +39,11 @@ def create_folder_if_not_exists(token, folder_path):
 
 def upload_to_yandex_disk(token, name, folder_path, file):
     # Составляем полный путь к файлу на Yandex Disk
+    moscow_tz = pytz.timezone('Europe/Moscow')
+    moscow_time = datetime.datetime.now(moscow_tz)
+    folder_path += f'/{moscow_time.day}.{moscow_time.month}.{moscow_time.year}'
     create_folder_if_not_exists(token, folder_path)
+
     destination_path = f'{folder_path}/{name}'
     # Получаем URL для загрузки
     headers = {"Authorization": "OAuth " + token}
