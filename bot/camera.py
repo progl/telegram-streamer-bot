@@ -37,12 +37,23 @@ def create_folder_if_not_exists(token, folder_path):
         print(f'Ошибка при создании папки: {response.text}')
 
 
+saved_path = ''
+
+
 def upload_to_yandex_disk(token, name, folder_path, file):
+    global saved_path
     # Составляем полный путь к файлу на Yandex Disk
     moscow_tz = pytz.timezone('Europe/Moscow')
     moscow_time = datetime.datetime.now(moscow_tz)
-    folder_path += f'/{moscow_time.day}.{moscow_time.month}.{moscow_time.year}'
-    create_folder_if_not_exists(token, folder_path)
+    new_fp = f'timelapse/{folder_path}/{moscow_time.day}.{moscow_time.month}.{moscow_time.year}'
+    if saved_path != new_fp:
+        create_folder_if_not_exists(token, 'timelapse')
+        create_folder_if_not_exists(token, f'timelapse/{folder_path}')
+        create_folder_if_not_exists(token, new_fp)
+        saved_path = new_fp
+
+    folder_path = new_fp
+    print('folder_path', folder_path)
 
     destination_path = f'{folder_path}/{name}'
     # Получаем URL для загрузки
@@ -448,7 +459,6 @@ class Camera:
 
     def take_lapse_photo(self, gcode: str = "") -> None:
         # Todo: check for space available?
-        print('self.lapse_dir)', self.lapse_dir)
         Path(self.lapse_dir).mkdir(parents=True, exist_ok=True)
         # never add self in params there!
         with self.take_photo() as photo:

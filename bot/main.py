@@ -1215,6 +1215,13 @@ def start_bot(bot_token, socks):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Streamer Telegram Bot")
     parser.add_argument(
+        "-s",
+        "--sync",
+        default=None,
+        metavar="<sync>",
+        help="Sync with yandex",
+    )
+    parser.add_argument(
         "-c",
         "--configfile",
         default="./telegram.conf",
@@ -1274,20 +1281,16 @@ if __name__ == "__main__":
     notifier = Notifier(configWrap, bot_updater.bot, klippy, cameraWrap, scheduler, rotatingHandler)
     ws_helper = WebSocketHelper(configWrap, klippy, notifier, timelapse, scheduler,  rotatingHandler)
 
+    if system_args.sync:
+        print('exit sync ', system_args.sync)
+        exit()
+
     scheduler.start()
-
     greeting_message(bot_updater.bot)
-
     if configWrap.timelapse.autostart:
         ws_helper._timelapse.clean()
         ws_helper._timelapse.is_running = True
-
-
-
-
     ws_helper.run_forever()
-
     logger.info("Exiting! Moonraker connection lost!")
-
     scheduler.shutdown(wait=False)
     bot_updater.stop()
